@@ -34,7 +34,15 @@ public class Dither {
         System.out.println(filename + " " + width + "x" + height + " " + img.getType());
         
         BufferedImage output = new BufferedImage(width, height, img.getType());
-        
+        for(int i=0; i < height; i++){
+            for(int j = 0; j < width; j++){
+                int color = img.getRGB(j,i);
+                int alpha = (color&0xff000000)>>24;
+                if(alpha == 0){
+                    img.setRGB(j,i,0xffffffff);
+                }
+            }
+        }
         for(int i=0; i < height; i++){
             for(int j = 0; j < width; j++){
                 // The getRGB method returns RGBA values in the default TYPE_INT_ARGB type.
@@ -46,16 +54,16 @@ public class Dither {
                 int greyValue = getGreyFromRGB(color);
 
                 int newColor = 0; 
-                int error = 0;
+                double error = 0;
                 if(greyValue < 128){
-                    error = Math.round((greyValue)/42);
+                    error = (greyValue)/42;
                     newColor = 0xff000000; //Black
                 } else {
-                    error = Math.round((greyValue-255)/42);
+                    error = (greyValue-255)/42;
                     newColor = 0xffffffff; //white
                 }
 
-                //Sama row
+                //Same row
                 if(j < width-1){ //there is a column to right
                     int neighbor = getGreyFromRGB(img.getRGB(j+1,i));
                     img.setRGB(j+1,i, getGSRGBfromGrey(neighbor + (error*8))); //error * 8
@@ -132,7 +140,8 @@ public class Dither {
         int red = (rgb&0xff0000)>>16;
         int green = (rgb&0xff00)>>8;
         int blue = rgb&0xff;
-        int greyValue = (int)(0.21*red + 0.72*green + 0.07*green);
+        int greyValue = (int)(0.21*red + 0.72*green + 0.07*blue);
+        // greyValue = (int)((red+green+blue)/3); //Average of RGB for grey
         return greyValue;
     }
 
@@ -140,5 +149,8 @@ public class Dither {
     // In TYPE_INT_ARGB format
     public static int getGSRGBfromGrey(int greyscale){
         return (0xff<<24)+(greyscale<<16)+(greyscale<<8)+greyscale;
+    }
+    public static int getGSRGBfromGrey(double greyscale){
+        return getGSRGBfromGrey((int)greyscale);
     }
  }
